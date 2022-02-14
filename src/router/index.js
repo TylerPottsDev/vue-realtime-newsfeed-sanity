@@ -1,20 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import { auth } from '../firebase'
+import store from '../store'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
-    meta: {
-      requiresAuth: true
-    }
+    component: Home
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import(/* webpackChunkName: "login" */ '../views/Login.vue')
+	path: '/authors',
+	name: 'Authors',
+	component: () => import('../views/Authors.vue'),
+  },
+  {
+	path: '/post/:id',
+	name: 'Post',
+	component: () => import('../views/post/_id.vue'),
+  },
+  {
+	path: '/author/:id',
+	name: 'Author',
+	component: () => import('../views/author/_id.vue'),
   }
 ]
 
@@ -23,16 +30,15 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
-  if (to.path === '/login' && auth.currentUser) {
-    next('/')
-    return
-  } else if (to.matched.some(record => record.meta.requiresAuth) && !auth.currentUser) {
-    next('/login')
-    return
-  }
-
-  next()
+router.afterEach((to, from) => {
+	// Only run if you are coming from a route
+	if (from.name) { 
+		document.documentElement.scrollTop = 0
+		
+		// Close menu after navigation
+		store.dispatch('CloseMenu')
+	}
 })
+
 
 export default router

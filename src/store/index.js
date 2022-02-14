@@ -1,171 +1,93 @@
 import { createStore } from 'vuex'
-import router from '../router'
-import { auth } from '../firebase'
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth'
-
-const provider = new GoogleAuthProvider();
+import sanity from '../client'
 
 export default createStore({
-  state: {
-    user: null,
-    token: null,
-    menu_is_active: false,
-    errors: []
-  },
+	state: {
+		menu_is_active: false,
+		posts: [],
+		total_posts: 0,
+		authors: []
+	},
 
-  mutations: {
-    // Set the user from a firebase auth object
-    SET_USER: (state, user) => {
-      state.user = user
-    },
+	mutations: {
+		TOGGLE_MENU (state, dir = null) {
+			if (dir === 'open') {
+				state.menu_is_active = true
+			} else if (dir === 'close') {
+				state.menu_is_active = false
+			} else {
+				state.menu_is_active = !state.menu_is_active
+			}
+		},
 
-    // Clear the user to log out
-    CLEAR_USER: (state) => {
-      state.user = null
-    },
+		SET_POSTS (state, posts) {
+			state.posts = posts
+		},
 
-    // Set token
-    SET_TOKEN: (state, token) => {
-      state.token = token
-    },
+		ADD_POSTS (state, posts) {
+			state.posts = [...state.posts, ...posts]
+		},
 
-    // Toggle the menu
-    TOGGLE_MENU: (state) => {
-      state.menu_is_active = !state.menu_is_active
-    },
+		SET_TOTAL_POSTS (state, total_posts) {
+			state.total_posts = total_posts
+		},
 
-    // Set errors
-    SET_ERRORS: (state, errors) => {
-      state.errors = errors
-    }
-  },
-  
-  actions: {
-    async login ({ commit, state }, { email, password }) {
-      try {
-        await signInWithEmailAndPassword(auth, email, password)
-      } catch (error) {
-        switch (error.code) {
-          case 'auth/user-not-found':
-            commit('SET_ERRORS', [...state.errors, 'User not found'])
-            break
-          case 'auth/wrong-password':
-            commit('SET_ERRORS', [...state.errors, 'Wrong password'])
-            break
-          default:
-            commit('SET_ERRORS', [...state.errors, error.message])
-            break
-        }
+		SET_AUTHORS (state, authors) {
+			state.authors = authors
+		}
+	},
+	
+	actions: {
+		ToggleMenu ({ commit }) {
+			commit('TOGGLE_MENU')
+		},
+		CloseMenu ({ commit }) {
+			commit('TOGGLE_MENU', "close")
+		},
+		FetchPosts ({ commit }, limit = null) {
+			const query = `*[_type == "post"] { ..., author-> } | order(_createdAt desc) ${limit ? `[0...${limit}]` : ''}`
 
-        return
-      }
+			sanity.fetch(query).then(posts => {
+				commit('SET_POSTS', posts)
+			})
 
-      commit('SET_USER', auth.currentUser)
+			const count_query = `count(*[_type == "post"])`
 
-      router.push('/')
-    },
+			sanity.fetch(count_query).then(data => {
+				commit('SET_TOTAL_POSTS', data)
+			})
+		},
+		LoadMorePosts ({ commit }, limit = 10) {
+			const query = `*[_type == "post"] { ..., author-> } | order(_createdAt desc) [${this.state.posts.length}...${this.state.posts.length + limit}]`
 
-    async register ({ commit, state }, { email, password }) {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password)
-      } catch (error) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            commit('SET_ERRORS', [...state.errors, 'Email already in use'])
-            break
-          case 'auth/invalid-email':
-            commit('SET_ERRORS', [...state.errors, 'Invalid email'])
-            break
-          case 'auth/operation-not-allowed':
-            commit('SET_ERRORS', [...state.errors, 'Operation not allowed'])
-            break
-          default:
-            commit('SET_ERRORS', [...state.errors, 'Something went wrong'])
-            break
-        }
+			sanity.fetch(query).then(posts => {
+				commit('ADD_POSTS', posts)
+			})
+		},
+		AddNewPost({ commit }, post) {
+			commit('ADD_POSTS', [post])
+		},
+		UpdatePost({ commit }, post) {
+			commit('SET_POSTS', this.state.posts.map(p => p._id === post._id ? post : p))
+		},
+		RemovePost({ commit }, id) {
+			commit('SET_POSTS', this.state.posts.filter(p => p._id !== id))
+		},
+		FetchAuthors({ commit }) {
+			const query = `*[_type == "author"] | order(full_name)`
 
-        return
-      }
+			sanity.fetch(query).then(authors => {
+				commit('SET_AUTHORS', authors)
+			})
+		}
+	},
 
-      commit('SET_USER', auth.currentUser)
-
-      router.push('/')
-    },
-
-    async logout ({ commit, state }) {
-      try {
-        await signOut(auth)
-      } catch (error) {
-        commit('SET_ERRORS', [...state.errors, error.message])
-      }
-
-      commit('CLEAR_USER')
-
-      router.push('/login')
-    },
-
-    loginWithGoogle ({ commit, state }) {
-      try {
-        signInWithPopup(auth, provider)
-          .then(result => {
-            const credential = GoogleAuthProvider.credentialFromResult(result)
-            const token = credential.accessToken
-            
-            commit('SET_TOKEN', token)
-            commit('SET_USER', result.user) 
-          })
-      } catch (error) {
-        commit('SET_ERRORS', [...state.errors, error.message])
-        return
-      }
-
-      router.push('/')
-    },
-
-    RemoveError ({ commit, state }, error) {
-      commit('SET_ERRORS', state.errors.filter(e => e !== error))
-    },
-
-    FetchUser ({commit}) {
-      auth.onAuthStateChanged(async user => {
-        if (user === null)  {
-          commit('CLEAR_USER')
-          return
-        } else {
-          commit('SET_USER', user)
-
-          if (router.isReady() && router.currentRoute.value.path === '/login') {
-            router.push('/')
-          }
-        }
-      })
-    },
-
-    toggleMenu ({ commit }) {
-      commit('TOGGLE_MENU')
-    }
-  },
-
-  getters: {
-    // Get the user from the state
-    user: (state) => {
-      return state.user
-    },
-
-    // Get auth state
-    isAuthenticated: (state) => {
-      return !!state.user
-    },
-
-    // Get Errors
-    errors: (state) => {
-      return state.errors
-    }
-  }
+	getters: {
+		menu_: state => state.menu_is_active,
+		posts: state => state.posts.sort(
+			(a, b) => new Date(b._createdAt).getTime() - new Date(a._createdAt).getTime()
+		),
+		authors: state => state.authors
+	}
+		
 })
