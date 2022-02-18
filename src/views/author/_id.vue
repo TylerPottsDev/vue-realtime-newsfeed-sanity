@@ -56,7 +56,6 @@ export default {
 					posts.value = data
 				})
 
-
 			})
 		})
 
@@ -68,7 +67,3 @@ export default {
 	}
 }
 </script>
-
-<style>
-
-</style>

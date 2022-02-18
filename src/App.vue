@@ -1,9 +1,9 @@
 <template>
-  <div class="bg-gray-700 min-h-screen text-white">
-    <Header />
-    <Sidebar />
-    <router-view />
-  </div>
+	<div class="bg-gray-700 min-h-screen text-white">
+		<Header />
+		<Sidebar />
+		<router-view />
+	</div>
 </template>
 
 <script>
@@ -12,11 +12,11 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 
 export default {
-  name: 'App',
-  components: {
-    Header,
-    Sidebar
-  }
+	name: 'App',
+	components: {
+		Header,
+		Sidebar
+	}
 }
 </script>
 
