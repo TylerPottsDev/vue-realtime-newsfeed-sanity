@@ -1,7 +1,7 @@
 <template>
 	<main class="post-page">
 		<section v-if="post" class="container mx-auto p-4">
-			<img :src="CreateURL(post.image)" class="w-full mb-8">
+			<img :src="CreateURL(post.image, 1280, 300)" class="w-full mb-8">
 
 			<button 
 				@click="$router.back()" 
@@ -32,10 +32,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import sanity from '../../client'
-
-import imageUrlBuilder from '@sanity/image-url'
-
-const builder = imageUrlBuilder(sanity)
+import { CreateURL, TextToHTML } from '../../utils'
 
 export default {
 	setup () {
@@ -43,14 +40,6 @@ export default {
 		const id = ref(route.params.id)
 		const post = ref(null)
 		const author = ref(null)
-
-		const CreateURL = (source, width = 1280, height = 300) => {
-			return builder.image(source).width(width).height(height).url()
-		}
-
-		const TextToHTML = (text) => {
-			return text.replace(/\n/g, "<br>")
-		}
 
 		onMounted(() => {
 			sanity.getDocument(id.value).then(data => {

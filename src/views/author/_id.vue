@@ -27,9 +27,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import sanity from '../../client'
-import imageUrlBuilder from '@sanity/image-url'
-
-const builder = imageUrlBuilder(sanity)
+import { CreateURL } from '../../utils'
 
 import PostCard from '../../components/PostCard'
 
@@ -42,10 +40,6 @@ export default {
 		const id = ref(route.params.id)
 		const author = ref(null)
 		const posts = ref([])
-
-		const CreateURL = (source, width = 300, height = 300) => {
-			return builder.image(source).width(width).height(height).url()
-		}
 
 		onMounted(() => {
 			sanity.getDocument(id.value).then(data => {
