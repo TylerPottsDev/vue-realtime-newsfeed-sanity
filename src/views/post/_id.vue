@@ -15,13 +15,13 @@
 
 			<p v-html="TextToHTML(post.content)" class="text-lg mb-8"></p>
 
-			<div class="flex items-center mb-4" v-if="author">
+			<div class="flex items-center mb-4" v-if="post.author">
 				<img 
-					:src="CreateURL(author.avatar, 300, 300)" 
+					:src="CreateURL(post.author.avatar, 300, 300)" 
 					class="inline-block rounded-full w-10 h-10 mr-4"  />
 
 				<h1 class="text-gray-500">
-					{{ author.full_name }}
+					{{ post.author.full_name }}
 				</h1>
 			</div>
 		</section>
@@ -39,21 +39,18 @@ export default {
 		const route = useRoute()
 		const id = ref(route.params.id)
 		const post = ref(null)
-		const author = ref(null)
 
 		onMounted(() => {
-			sanity.getDocument(id.value).then(data => {
+			const query = '*[_type == "post" && _id == $id][0] { ..., author-> }'
+			const params = { id: id.value }
+			
+			sanity.fetch(query, params).then(data => {
 				post.value = data
-
-				sanity.getDocument(data.author._ref).then(data => {
-					author.value = data
-				})
 			})
 		})
 
 		return {
 			post,
-			author,
 			CreateURL,
 			TextToHTML
 		}

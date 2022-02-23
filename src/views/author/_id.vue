@@ -13,9 +13,9 @@
 
 			<p class="text-gray-500 mb-8">{{ author.short_bio }}</p>
 
-			<div class="grid gap-4">
+			<div class="grid gap-4" v-if="author.posts">
 				<PostCard 
-					v-for="(post, i) in posts" 
+					v-for="(post, i) in author.posts" 
 					:key="i" 
 					:post="post" />
 			</div>
@@ -39,29 +39,17 @@ export default {
 		const route = useRoute()
 		const id = ref(route.params.id)
 		const author = ref(null)
-		const posts = ref([])
 
 		onMounted(() => {
-			sanity.getDocument(id.value).then(data => {
+			const query = '*[_type == "author" && _id == $id][0] { ..., "posts": *[_type == "post" && author->_id == $id] {_id, title, excerpt, image, _createdAt, author->{full_name, avatar}}}'
+			const params = { id: id.value }
+			sanity.fetch(query, params).then(data => {
 				author.value = data
-
-				const query = `*[_type == "post" && author._ref == $authorId] {_id, title, excerpt, image, _createdAt, author->{full_name, avatar}} | order(_createdAt desc)`
-
-				const params = {
-					authorId: data._id
-				}
-
-				sanity.fetch(query, params).then(data => {
-					console.log(data);
-					posts.value = data
-				})
-
 			})
 		})
 
 		return {
 			author,
-			posts,
 			CreateURL
 		}
 	}
