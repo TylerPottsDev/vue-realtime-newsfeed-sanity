@@ -8,10 +8,7 @@
 </template>
 
 <script>
-import sanity from '../client'
-import imageUrlBuilder from '@sanity/image-url'
-
-const builder = imageUrlBuilder(sanity)
+import { CreateURL } from '../utils'
 
 export default {
 	props: {
@@ -21,10 +18,6 @@ export default {
 		}
 	},
 	setup () {
-		const CreateURL = (source, width = 480, height = 320) => {
-			return builder.image(source).width(width).height(height).url()
-		}
-
 		return {
 			CreateURL
 		}

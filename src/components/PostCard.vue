@@ -1,6 +1,6 @@
 <template>
 	<div class="bg-gray-800 rounded-lg p-4 flex flex-col sm:flex-row">
-		<img v-if="post.image" :src="CreateURL(post.image)" class="block w-full sm:max-w-xs mr-4 object-cover mb-4 sm:mb-0" />
+		<img v-if="post.image" :src="CreateURL(post.image, 480, 320)" class="block w-full sm:max-w-xs mr-4 object-cover mb-4 sm:mb-0" />
 		<div class="flex-1 flex flex-col">
 			<h3 class="text-lg md:text-2xl font-bold mb-4">{{ post.title }}</h3>
 		
@@ -24,10 +24,7 @@
 </template>
 
 <script>
-import sanity from '../client'
-import imageUrlBuilder from '@sanity/image-url'
-
-const builder = imageUrlBuilder(sanity)
+import { CreateURL, FormatDate } from '../utils'
 
 export default {
 	props: {
@@ -37,15 +34,6 @@ export default {
 		}
 	},
 	setup () {
-		const CreateURL = (source, width = 480, height = 320) => {
-			if (!source) return '';
-			return builder.image(source).width(width).height(height).url()
-		}
-
-		const FormatDate = (date) => {
-			return new Date(date).toLocaleDateString()
-		}
-
 		return {
 			CreateURL,
 			FormatDate
